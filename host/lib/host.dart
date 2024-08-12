@@ -21,7 +21,6 @@ Future<Response> joinHandler(Request request) async {
     'player_name': playerName,
   };
 
-
   // Add the player to lobby
   //TODO : check if user is registered and not joined already
   userLobby.add(pMap);
@@ -38,7 +37,7 @@ Future<Response> joinHandler(Request request) async {
   }
 
   final gameMap = getGame(playerId);
-  final secretCode = getCode(playerId);
+  final secretCode = getToken(playerId);
 
   return Response.ok(jsonEncode({"secret_code": secretCode, ...gameMap}));
 }
@@ -46,12 +45,28 @@ Future<Response> joinHandler(Request request) async {
 Future<Response> gameHandler(Request request) async {
   //add to user lobby when won elsewhere
 
+  final token = request.headers['authorization']?.split(" ").last;
+
+  final playerId =
+      registeredUsers.entries.firstWhere((entry) => entry.value['token'] == token).key;
+
   // if user in non competing, send invalid req err
+  if (noncompetingPlayer
+      .where((player) => player['player_id'] == playerId)
+      .isNotEmpty) {
+    return Response.forbidden(
+        'You have already been eliminated from the gameplay');
+  }
+
   // if user is competing,
   // check lobby length with competing length
-  // if not, wait
+  while (userLobby.length != competingPlayers.length) {
+    await Future.delayed(Duration(seconds: 2));
+  }
+
+  final game = getGame(playerId);
   // if yes, proceed to get game and respond
-  return Response.ok('Game Handler');
+  return Response.ok(jsonEncode(game));
 }
 
 Future<Response> moveHandler(Request request) async {
@@ -61,7 +76,7 @@ Future<Response> moveHandler(Request request) async {
     final token = request.headers['authorization']?.split(" ").last;
 
     final playerId =
-        secretCodes.entries.firstWhere((entry) => entry.value == token).key;
+        registeredUsers.entries.firstWhere((entry) => entry.value['token'] == token).key;
 
     final int? offence = requestJson['offence'];
     final List<int>? defence = (requestJson['defence'] as List<dynamic>?)
@@ -73,10 +88,12 @@ Future<Response> moveHandler(Request request) async {
     final currentGame = getGame(playerId);
     final gameId = currentGame['game_id'];
     if (currentGame.isEmpty) {
-      // TODO : send instruction to query join or game endpt
-      // if user is not in the join list
-      return Response.forbidden(
-          {"reason": "No open games available for you"}.toString());
+      
+      return Response.forbidden(jsonEncode({
+        "reason": "No open games available for you",
+        "instruction":
+            "Query the /game end point for information about next game"
+      }));
     }
 
     // 2.a verify user can make this move
@@ -86,8 +103,8 @@ Future<Response> moveHandler(Request request) async {
 
     if ((mustOffend && isDefending) || (!mustOffend && isOffending)) {
       return Response.badRequest(
-          body: {"reason": mustOffend ? "You must offend" : "You must defend"}
-              .toString());
+          body: jsonEncode(
+              {"reason": mustOffend ? "You must offend" : "You must defend"}));
     }
     // 2.b check if they  have not already registered move
 
@@ -290,10 +307,10 @@ Map<String, dynamic> getGame(String playerId) {
   return {};
 }
 
-String getCode(String playerId) {
-  return secretCodes[playerId]!;
+String getToken(String playerId) {
+  return registeredUsers[playerId]!['token'];
 }
 
-void exportChampionshipDetails(){
+void exportChampionshipDetails() {
   print(games);
 }
