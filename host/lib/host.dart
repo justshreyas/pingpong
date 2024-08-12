@@ -43,7 +43,7 @@ Future<Response> joinHandler(Request request) async {
   competingPlayers.add(playerId);
 
   if (userLobby.length == registeredUsers.length) {
-    print('All players have joined. Proceeding to game drawing phase.');
+    print('All players have joined. Proceeding to draw games for this round.');
     drawGames();
   }
 
@@ -77,15 +77,14 @@ Future<Response> gameHandler(Request request) async {
         'You have already been eliminated from the gameplay.');
   }
 
-  // if user is competing,
-  // check lobby length with competing length
-  while (userLobby.length != competingPlayers.length) {
-    await Future.delayed(Duration(seconds: 2));
-  }
-
   final game = getAvailableGame(playerId);
   // if yes, proceed to get game and respond
-  return Response.ok(jsonEncode(game));
+  if (game.isEmpty) {
+    return Response.ok('Other games in this round are still in progress.\n'
+        'Try again in some time for updates.');
+  } else {
+    return Response.ok(jsonEncode(game));//TODO : send only 
+  }
 }
 
 Future<Response> moveHandler(Request request) async {
@@ -246,7 +245,7 @@ Future<Response> moveHandler(Request request) async {
     final int myScore = isPlayer1 ? p1Score : p2Score;
     final int oppScore = isPlayer1 ? p2Score : p1Score;
     final bool thisPlayerWinsTheRound =
-        currentGame['last_scored_player_id'] == playerId;
+        updatedGame['last_scored_player_id'] == playerId;
 
     nextMoveResponse = thisPlayerWinsTheRound
         ? Response.ok('You won this round!'
@@ -258,7 +257,7 @@ Future<Response> moveHandler(Request request) async {
 
     //4.a.1 check if status of game is over
     if (updatedGame['status'] == 'over') {
-      gameOverResponse = updatedGame['last_scored_player_id'] == playerId
+      gameOverResponse = thisPlayerWinsTheRound
           ? Response.ok(
               'Game over. Query \'/game\' endpoint to find the next draws.')
           : Response.ok('Game over. You are out of the tournament.'
@@ -274,6 +273,7 @@ Future<Response> moveHandler(Request request) async {
           } else {
             championshipWinnerResponse = Response.ok(
                 'Last game over. You did not win the championship :(');
+          exportChampionshipDetails();
           }
         } else {
           drawGames();
@@ -314,6 +314,7 @@ Future<void> drawGames() async {
   }
 
   games.addAll(matchups);
+  print("Matchups complete. Games Drawn.");
   userLobby.retainWhere((p) => false);
 }
 
