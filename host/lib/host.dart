@@ -286,15 +286,17 @@ Future<Response> moveHandler(Request request) async {
 Future<void> drawGames() async {
   // final random = Random();
   final matchups = <String, Map<String, dynamic>>{};
+  gameDrawn++;
 
   // // Shuffle players and create matchups
   // players.shuffle(random);
   for (var i = 0; i < competingPlayers.length; i += 2) {
     final player1 = competingPlayers[i];
     final player2 = competingPlayers[i + 1];
-    final gameId = 'game_${(i ~/ 2) + 1}';
+    final gameId = 'draw_${gameDrawn}_game${(i ~/ 2) + 1}';
     matchups[gameId] = {
       'game_id': gameId,
+      'draw_level': gameDrawn,
       'status': 'drawn',
       'player1_id': player1,
       'player2_id': player2,
