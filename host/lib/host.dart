@@ -16,15 +16,12 @@ Future<Response> joinHandler(Request request) async {
   final playerId = requestJson['player_id'];
   final playerName = requestJson['player_name'];
 
-  final Map<String, String> pMap = {
-    'player_id': playerId,
-    'player_name': playerName,
-  };
+  //TODO : verify auth
 
   // Add the player to lobby
   //TODO : check if user is registered and not joined already
-  userLobby.add(pMap);
-  competingPlayers.add(pMap);
+  userLobby.add(playerId);
+  competingPlayers.add(playerId);
 
   if (userLobby.length == registeredUsers.length) {
     print('All players have joined. Proceeding to game drawing phase.');
@@ -47,13 +44,12 @@ Future<Response> gameHandler(Request request) async {
 
   final token = request.headers['authorization']?.split(" ").last;
 
-  final playerId =
-      registeredUsers.entries.firstWhere((entry) => entry.value['token'] == token).key;
+  final playerId = registeredUsers.entries
+      .firstWhere((entry) => entry.value['token'] == token)
+      .key;
 
   // if user in non competing, send invalid req err
-  if (noncompetingPlayer
-      .where((player) => player['player_id'] == playerId)
-      .isNotEmpty) {
+  if (noncompetingPlayers.where((player) => player == playerId).isNotEmpty) {
     return Response.forbidden(
         'You have already been eliminated from the gameplay');
   }
@@ -75,8 +71,9 @@ Future<Response> moveHandler(Request request) async {
     final requestJson = jsonDecode(requestData) as Map<String, dynamic>;
     final token = request.headers['authorization']?.split(" ").last;
 
-    final playerId =
-        registeredUsers.entries.firstWhere((entry) => entry.value['token'] == token).key;
+    final playerId = registeredUsers.entries
+        .firstWhere((entry) => entry.value['token'] == token)
+        .key;
 
     final int? offence = requestJson['offence'];
     final List<int>? defence = (requestJson['defence'] as List<dynamic>?)
@@ -88,7 +85,6 @@ Future<Response> moveHandler(Request request) async {
     final currentGame = getGame(playerId);
     final gameId = currentGame['game_id'];
     if (currentGame.isEmpty) {
-      
       return Response.forbidden(jsonEncode({
         "reason": "No open games available for you",
         "instruction":
@@ -161,27 +157,27 @@ Future<Response> moveHandler(Request request) async {
         status = 'over';
 
         // 3.a.2 if game is over, update noncompeting player
-        late final Map<String, String> loser;
-        late final Map<String, String> winner;
+        late final String loser;
+        late final String winner;
         if (p1Score == kPointsToWinAGame) {
           // remove p2
           loser = competingPlayers
-              .where((u) => u['player_id'] == currentGame['player2_id'])
+              .where((u) => u == currentGame['player2_id'])
               .first;
           winner = competingPlayers
-              .where((u) => u['player_id'] == currentGame['player1_id'])
+              .where((u) => u == currentGame['player1_id'])
               .first;
         } else {
           // remove p1
           loser = competingPlayers
-              .where((u) => u['player_id'] == currentGame['player1_id'])
+              .where((u) => u == currentGame['player1_id'])
               .first;
           winner = competingPlayers
-              .where((u) => u['player_id'] == currentGame['player2_id'])
+              .where((u) => u == currentGame['player2_id'])
               .first;
         }
         competingPlayers.remove(loser);
-        noncompetingPlayer.add(loser);
+        noncompetingPlayers.add(loser);
         userLobby.add(winner);
       } else {
         status = 'computed';
@@ -238,7 +234,7 @@ Future<Response> moveHandler(Request request) async {
         // 4.b when status of all games becomes completed, check competing players length
         //    proceed to draw new round or declare winner
         if (competingPlayers.length == 1) {
-          if (competingPlayers.first['player_id'] == playerId) {
+          if (competingPlayers.first == playerId) {
             championshipWinnerResponse = Response.ok(
                 'Last game over. You are crowned the championship winner! 38D');
           } else {
@@ -276,11 +272,11 @@ Future<void> drawGames() async {
     matchups[gameId] = {
       'game_id': gameId,
       'status': 'drawn',
-      'player1_id': player1['player_id']!,
-      'player2_id': player2['player_id']!,
+      'player1_id': player1,
+      'player2_id': player2,
       'player1_score': 0,
       'player2_score': 0,
-      'last_scored_player_id': player1['player_id'],
+      'last_scored_player_id': player1,
     };
   }
 

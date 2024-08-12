@@ -52,15 +52,13 @@ final Map<String, Map<String, dynamic>> registeredUsers = {
 };
 
 /// Record of all the users who are waiting in a virtual lobby
-final List<Map<String, String>> userLobby = [];
+final List<String> userLobby = [];
 
 /// Record of all the users who are still competing in the championship.
-final List<Map<String, String>> competingPlayers = [];
+final List<String> competingPlayers = [];
 
 /// Record of all users joined but no longer competing in the championship.
-final List<Map<String, String>> noncompetingPlayer = [];
-
-// final List<Map<String,String>> players = [];
+final List<String> noncompetingPlayers = [];
 
 /// Database of all drawn games
 final Map<String, Map<String, dynamic>> games = {};
