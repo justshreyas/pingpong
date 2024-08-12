@@ -8,7 +8,12 @@ int calculate() {
 
 // * Handlers
 Response rootHandler(Request request) {
-  return Response.ok('rootHandler');
+  return Response.ok("""
+Welcome to the Ping Pong Championship.
+POST /join with "player_name" and "player_password"
+POST /move with "offence" or "defence" as instructed
+GET /game for game instructions
+""");
 }
 
 Future<Response> joinHandler(Request request) async {
