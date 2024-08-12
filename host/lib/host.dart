@@ -83,7 +83,7 @@ Future<Response> gameHandler(Request request) async {
     return Response.ok('Other games in this round are still in progress.\n'
         'Try again in some time for updates.');
   } else {
-    return Response.ok(jsonEncode(game));//TODO : send only 
+    return Response.ok(jsonEncode(game)); 
   }
 }
 
@@ -273,7 +273,7 @@ Future<Response> moveHandler(Request request) async {
           } else {
             championshipWinnerResponse = Response.ok(
                 'Last game over. You did not win the championship :(');
-          exportChampionshipDetails();
+            exportChampionshipDetails();
           }
         } else {
           drawGames();
@@ -290,6 +290,7 @@ Future<Response> moveHandler(Request request) async {
 }
 
 // * Helpers
+/// Matches up all the competing players to draw games for a round
 Future<void> drawGames() async {
   // final random = Random();
   final matchups = <String, Map<String, dynamic>>{};
@@ -318,6 +319,7 @@ Future<void> drawGames() async {
   userLobby.retainWhere((p) => false);
 }
 
+/// Get currently available game for the mentioned playerId
 Map<String, dynamic> getAvailableGame(String playerId) {
   final openGames = games.values.where((game) => game['status'] != 'over');
 
@@ -337,12 +339,32 @@ Map<String, dynamic> getAvailableGame(String playerId) {
   return {};
 }
 
+/// Get token associated with specified playerId
 String getToken(String playerId) {
   return registeredUsers[playerId]!['token'];
 }
 
+/// Print details of all the games
 void exportChampionshipDetails() {
-  print(games);
+  print('\n\n----Ping Pong Championship has ended----');
+  print('\n\nGAME LOGS :\n');
+
+  for (var i = gameDrawn; i >0; i--) {
+    final gamesInThisRound = games.values.where((game)=>game['draw_level']==i);
+
+    if(i==gameDrawn){
+      print('Finals:');
+    }else if(i==gameDrawn-1){
+      print('Semi-Finals:');
+    }else{
+      print('Qualifier Round $i');
+    }
+    for (var game in gamesInThisRound) {
+      print(game);
+    }
+  }
+  
+  print('\n\n----Safe to SHUTDOWN SERVER----');
 }
 
 /// Returns the authentication token for this user if successful

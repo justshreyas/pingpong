@@ -11,9 +11,11 @@ void main(List<String> arguments) async {
   router.get('/game', gameHandler);
   router.post('/move', moveHandler);
 
-  final handler = 
+  final handler =
       const Pipeline().addMiddleware(logRequests()).addHandler(router.call);
 
   var server = await io.serve(handler, 'localhost', 8080);
   print('Server listening on port ${server.port}');
+  print('\n\n----Ping Pong Championship has started----');
+  print('Registered players can now query the /join end point');
 }
