@@ -1,5 +1,6 @@
-R : Start hosting
+Referee : Start hosting
 ```
+cd host
 dart run
 ```
 
@@ -9,7 +10,7 @@ curl -Uri http://localhost:8080/ -Method Get
 ```
 
 
-P1...8 : Join Championship with name and password
+P1...8 : Join Championship with name and password (Assumption => password = name)
 ```
 curl -Uri http://localhost:8080/join -Method Post -Body '{"player_password":"Eliud", "player_name": "Eliud"}'
 curl -Uri http://localhost:8080/join -Method Post -Body '{"player_password":"Mo", "player_name": "Mo"}'
@@ -29,7 +30,6 @@ $headers = @{ "Authorization" = "Bearer token" }
 curl -Uri http://localhost:8080/move -Method Post -Headers $headers -Body '{"offence": 1}'
 curl -Uri http://localhost:8080/move -Method Post -Headers $headers -Body '{"defence": [2,3,4]}'
 ```
-(expect response when opponent has also sent their move request)
 
 
 P1...P8 : Query game instructions
