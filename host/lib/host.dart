@@ -6,6 +6,7 @@ int calculate() {
   return 6 * 7;
 }
 
+// * Handlers
 Response rootHandler(Request request) {
   return Response.ok('rootHandler');
 }
@@ -16,10 +17,21 @@ Future<Response> joinHandler(Request request) async {
   final playerId = requestJson['player_id'];
   final playerName = requestJson['player_name'];
 
-  //TODO : verify auth
+  final token = verifyIdAndNamePairing(playerId, playerName);
+  if (token == null) {
+    return Response.unauthorized(jsonEncode({
+      "reason": "Invalid credentials",
+      "instruction": "Try again with valid credentials",
+    }));
+  }
 
   // Add the player to lobby
-  //TODO : check if user is registered and not joined already
+  if (userLobby.contains(playerId)) {
+    return Response.forbidden(jsonEncode({
+      "reason": "Already joined the championship",
+      "instruction": "Query the /game endpoint to know about your next move",
+    }));
+  }
   userLobby.add(playerId);
   competingPlayers.add(playerId);
 
@@ -34,9 +46,12 @@ Future<Response> joinHandler(Request request) async {
   }
 
   final gameMap = getGame(playerId);
-  final secretCode = getToken(playerId);
+  final bearerToken = getToken(playerId);
 
-  return Response.ok(jsonEncode({"secret_code": secretCode, ...gameMap}));
+  return Response.ok(jsonEncode({
+    "token": bearerToken,
+    "instruction": gameMap['instruction'],
+  }));
 }
 
 Future<Response> gameHandler(Request request) async {
@@ -51,7 +66,7 @@ Future<Response> gameHandler(Request request) async {
   // if user in non competing, send invalid req err
   if (noncompetingPlayers.where((player) => player == playerId).isNotEmpty) {
     return Response.forbidden(
-        'You have already been eliminated from the gameplay');
+        'You have already been eliminated from the gameplay.');
   }
 
   // if user is competing,
@@ -255,10 +270,7 @@ Future<Response> moveHandler(Request request) async {
   return Response.internalServerError();
 }
 
-Response resultHandler(Request request) {
-  return Response.ok('resultHandler');
-}
-
+// * Helpers
 Future<void> drawGames() async {
   // final random = Random();
   final matchups = <String, Map<String, dynamic>>{};
@@ -309,4 +321,15 @@ String getToken(String playerId) {
 
 void exportChampionshipDetails() {
   print(games);
+}
+
+String? verifyIdAndNamePairing(String id, String name) {
+  final player = registeredUsers[id];
+  if (player != null) {
+    final nameMatches = player['player_name'] == name;
+    if (nameMatches) {
+      return player['token'];
+    }
+  }
+  return null;
 }

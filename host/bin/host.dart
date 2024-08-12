@@ -10,9 +10,8 @@ void main(List<String> arguments) async {
   router.post('/join', host.joinHandler);
   router.get('/game', gameHandler);
   router.post('/move', moveHandler);
-  router.get('/result', resultHandler);
 
-  final handler = //TODO : add auth middleware
+  final handler = 
       const Pipeline().addMiddleware(logRequests()).addHandler(router.call);
 
   var server = await io.serve(handler, 'localhost', 8080);
