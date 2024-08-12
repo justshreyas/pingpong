@@ -14,16 +14,18 @@ Response rootHandler(Request request) {
 Future<Response> joinHandler(Request request) async {
   final requestData = await request.readAsString();
   final requestJson = jsonDecode(requestData) as Map<String, dynamic>;
-  final playerId = requestJson['player_id'];
   final playerName = requestJson['player_name'];
+  final playerPassword = requestJson['player_password'];
 
-  final token = verifyIdAndNamePairing(playerId, playerName);
+  final token = authenticate(playerName, playerPassword);
   if (token == null) {
     return Response.unauthorized(jsonEncode({
       "reason": "Invalid credentials",
       "instruction": "Try again with valid credentials",
     }));
   }
+
+  final playerId = verifyToken(token)!;
 
   // Add the player to lobby
   if (userLobby.contains(playerId)) {
@@ -337,17 +339,21 @@ void exportChampionshipDetails() {
   print(games);
 }
 
-String? verifyIdAndNamePairing(String id, String name) {
-  final player = registeredUsers[id];
+/// Returns the authentication token for this user if successful
+String? authenticate(String name, String password) {
+  final player = registeredUsers.values
+      .where((player) => player['player_name'] == name)
+      .firstOrNull;
   if (player != null) {
-    final nameMatches = player['player_name'] == name;
-    if (nameMatches) {
+    final passwordMatches = player['player_password'] == password;
+    if (passwordMatches) {
       return player['token'];
     }
   }
   return null;
 }
 
+/// Verifies if token is valid and returns associated player id
 String? verifyToken(String token) {
   return registeredUsers.entries
       .where((entry) => entry.value['token'] == token)
