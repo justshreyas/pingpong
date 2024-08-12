@@ -1,32 +1,39 @@
-P1 = 
+R : Start hosting
 ```
-curl -Uri http://localhost:8080/join -Method Post -Body '{"player_id": "1", "player_name": "Player1"}'
-```
-(expect failure since host has not joined)
-
-
-R =
-```
-curl -Uri http://localhost:8080/join -Method Post -Body '{"referee_id": "referee007", "referee_secret": "superconfidential"}'
+dart run
 ```
 
-
-P1...8 = 
+P1...P8 : Print Game Info
 ```
-curl -Uri http://localhost:8080/join -Method Post -Body '{"player_id": "1", "player_name": "Player1"}'
-curl -Uri http://localhost:8080/join -Method Post -Body '{"player_id": "2", "player_name": "Player2"}'
-curl -Uri http://localhost:8080/join -Method Post -Body '{"player_id": "3", "player_name": "Player3"}'
-curl -Uri http://localhost:8080/join -Method Post -Body '{"player_id": "4", "player_name": "Player4"}'
-curl -Uri http://localhost:8080/join -Method Post -Body '{"player_id": "5", "player_name": "Player5"}'
-curl -Uri http://localhost:8080/join -Method Post -Body '{"player_id": "6", "player_name": "Player6"}'
-curl -Uri http://localhost:8080/join -Method Post -Body '{"player_id": "7", "player_name": "Player7"}'
-curl -Uri http://localhost:8080/join -Method Post -Body '{"player_id": "8", "player_name": "Player8"}'
+curl -Uri http://localhost:8080/ -Method Get
+```
+
+
+P1...8 : Join Championship with name and password
+```
+curl -Uri http://localhost:8080/join -Method Post -Body '{"player_password":"Eliud", "player_name": "Eliud"}'
+curl -Uri http://localhost:8080/join -Method Post -Body '{"player_password":"Mo", "player_name": "Mo"}'
+curl -Uri http://localhost:8080/join -Method Post -Body '{"player_password":"Mary", "player_name": "Mary"}'
+curl -Uri http://localhost:8080/join -Method Post -Body '{"player_password":"Usain", "player_name": "Usain"}'
+curl -Uri http://localhost:8080/join -Method Post -Body '{"player_password":"Paula", "player_name": "Paula"}'
+curl -Uri http://localhost:8080/join -Method Post -Body '{"player_password":"Galen", "player_name": "Galen"}'
+curl -Uri http://localhost:8080/join -Method Post -Body '{"player_password":"Shalane", "player_name": "Shalane"}'
+curl -Uri http://localhost:8080/join -Method Post -Body '{"player_password":"Haile", "player_name": "Haile"}'
 ```
 (expect response after 8th client has sent join request)
 
-P1...P8 : 
+
+P1...P8 : Register game move
 ```
-curl -Uri http://localhost:8080/offend -Method Post -Body '{"value": "1",}'
-curl -Uri http://localhost:8080/defend -Method Post -Body '{"value": "2,3,4",}'
+$headers = @{ "Authorization" = "Bearer token" }
+curl -Uri http://localhost:8080/move -Method Post -Headers $headers -Body '{"offence": 1,}'
+curl -Uri http://localhost:8080/move -Method Post -Headers $headers -Body '{"defence": [2,3,4],}'
 ```
 (expect response when opponent has also sent their move request)
+
+
+P1...P8 : Query game instructions
+```
+$headers = @{ "Authorization" = "Bearer token" }
+curl -Uri http://localhost:8080/game -Method Get -Headers $headers
+```
