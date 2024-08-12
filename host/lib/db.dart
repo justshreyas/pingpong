@@ -75,7 +75,7 @@ final Map<String, Map<String, dynamic>> games = {};
 final List<Map<String, dynamic>> gameMoves = [];
 
 ///Used to define points to be scored in a game
-const int kPointsToWinAGame = 1; //5
+const int kPointsToWinAGame = 5; //1
 
 ///Used to keep count of game draw rounds
 int gameDrawn = 0;
