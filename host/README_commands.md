@@ -26,8 +26,8 @@ curl -Uri http://localhost:8080/join -Method Post -Body '{"player_password":"Hai
 P1...P8 : Register game move
 ```
 $headers = @{ "Authorization" = "Bearer token" }
-curl -Uri http://localhost:8080/move -Method Post -Headers $headers -Body '{"offence": 1,}'
-curl -Uri http://localhost:8080/move -Method Post -Headers $headers -Body '{"defence": [2,3,4],}'
+curl -Uri http://localhost:8080/move -Method Post -Headers $headers -Body '{"offence": 1}'
+curl -Uri http://localhost:8080/move -Method Post -Headers $headers -Body '{"defence": [2,3,4]}'
 ```
 (expect response when opponent has also sent their move request)
 
