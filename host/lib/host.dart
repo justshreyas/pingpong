@@ -45,7 +45,7 @@ Future<Response> joinHandler(Request request) async {
     await Future.delayed(Duration(seconds: 2));
   }
 
-  final gameMap = getGame(playerId);
+  final gameMap = getAvailableGame(playerId);
   final bearerToken = getToken(playerId);
 
   return Response.ok(jsonEncode({
@@ -55,13 +55,14 @@ Future<Response> joinHandler(Request request) async {
 }
 
 Future<Response> gameHandler(Request request) async {
-  //add to user lobby when won elsewhere
-
   final token = request.headers['authorization']?.split(" ").last;
 
-  final playerId = registeredUsers.entries
-      .firstWhere((entry) => entry.value['token'] == token)
-      .key;
+  final tokenVerification = verifyToken(token ?? "no-token");
+  if (tokenVerification == null) {
+    return Response.unauthorized('Failed token verification');
+  }
+
+  final playerId = tokenVerification;
 
   // if user in non competing, send invalid req err
   if (noncompetingPlayers.where((player) => player == playerId).isNotEmpty) {
@@ -75,7 +76,7 @@ Future<Response> gameHandler(Request request) async {
     await Future.delayed(Duration(seconds: 2));
   }
 
-  final game = getGame(playerId);
+  final game = getAvailableGame(playerId);
   // if yes, proceed to get game and respond
   return Response.ok(jsonEncode(game));
 }
@@ -86,22 +87,24 @@ Future<Response> moveHandler(Request request) async {
     final requestJson = jsonDecode(requestData) as Map<String, dynamic>;
     final token = request.headers['authorization']?.split(" ").last;
 
-    final playerId = registeredUsers.entries
-        .firstWhere((entry) => entry.value['token'] == token)
-        .key;
+    final tokenVerification = verifyToken(token ?? "no-token");
+    if (tokenVerification == null) {
+      return Response.unauthorized('Failed token verification');
+    }
+
+    final playerId = tokenVerification;
 
     final int? offence = requestJson['offence'];
     final List<int>? defence = (requestJson['defence'] as List<dynamic>?)
         ?.map((i) => i as int)
         .toList();
-    // TODO : check for correct defence length
 
     // 1. get open game for user id
-    final currentGame = getGame(playerId);
+    final currentGame = getAvailableGame(playerId);
     final gameId = currentGame['game_id'];
     if (currentGame.isEmpty) {
       return Response.forbidden(jsonEncode({
-        "reason": "No open games available for you",
+        "reason": "No open games available right now",
         "instruction":
             "Query the /game end point for information about next game"
       }));
@@ -116,6 +119,15 @@ Future<Response> moveHandler(Request request) async {
       return Response.badRequest(
           body: jsonEncode(
               {"reason": mustOffend ? "You must offend" : "You must defend"}));
+    }
+
+    if (isDefending &&
+        defence.length != registeredUsers[playerId]!['defenceSetLength']) {
+      return Response.badRequest(
+          body: jsonEncode({
+        "reason": 'You must choose a defence that is '
+            '${registeredUsers[playerId]!['defenceSetLength']} long'
+      }));
     }
     // 2.b check if they  have not already registered move
 
@@ -296,7 +308,7 @@ Future<void> drawGames() async {
   userLobby.retainWhere((p) => false);
 }
 
-Map<String, dynamic> getGame(String playerId) {
+Map<String, dynamic> getAvailableGame(String playerId) {
   final openGames = games.values.where((game) => game['status'] != 'over');
 
   for (var game in openGames) {
@@ -332,4 +344,11 @@ String? verifyIdAndNamePairing(String id, String name) {
     }
   }
   return null;
+}
+
+String? verifyToken(String token) {
+  return registeredUsers.entries
+      .where((entry) => entry.value['token'] == token)
+      .firstOrNull
+      ?.key;
 }
